@@ -223,7 +223,7 @@ keys() {
 			;;
 		# Delete a file
 		D)
-			avoid && delete
+			avoid && delete && loc=1
 			;;
 		# Create a file
 		N)
@@ -251,7 +251,7 @@ keys() {
 			;;
 		# Move file(s)
 		m)
-			avoid && move
+			avoid && move && loc=1
 			;;
 		# Show hidden files
 		.)
