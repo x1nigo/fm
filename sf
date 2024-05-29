@@ -71,8 +71,15 @@ list_dir() {
 
 	# Format directories first then files
 	for item in "${list[@]}"; do
+		# Directory
 		if [[ -d "$item" ]]; then
 			prefix='\e[0;34m' && suffix='/'
+
+		# Executable file
+		elif [[ -x "$item" ]]; then
+			prefix='\e[0;32m' && suffix=
+
+		# Everything else
 		else
 			prefix='\e[0m' && suffix=
 		fi
