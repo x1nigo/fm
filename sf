@@ -22,7 +22,7 @@ reset_terminal()  {
 	# Clear screen and show cursor
 	printf '\e[?25h\e[2J\e[1;r'
 
-	# Show user input.
+	# Show user input
 	stty echo
 }
 
