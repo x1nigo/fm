@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# sf: The simple file-manager
+# sf: A terminal file-manager written in bash
 # Created by Chris Iñigo <https://github.com/x1nigo>
 
 # Default variables
@@ -8,47 +8,47 @@ hidden=0
 loc=1
 reset='\e[0m'
 
-# Setup the terminal.
+# Setup the terminal
 setup_terminal() {
-	# Clear screen and hide cursor.
+	# Clear screen and hide cursor
 	printf '\e[?25l\e[2J\e[1;r'
 
-	# Hide user input.
+	# Hide user input
 	stty -echo
 }
 
-# Reset terminal.
+# Reset terminal
 reset_terminal()  {
-	# Clear screen and show cursor.
+	# Clear screen and show cursor
 	printf '\e[?25h\e[2J\e[1;r'
 
 	# Show user input.
 	stty echo
 }
 
-# Prints the current directory.
+# Prints the current directory
 current_dir() {
-	# Print at the bottom of the terminal.
+	# Print at the bottom of the terminal
 	LINES=$((LINES-1))
 	printf "\e[%sH\e[0;41;30m[%d/%d] %s\033[K${reset}" \
 		"$LINES" \
 		"$loc" \
 		"$total"\
 		"$PWD"
-	# Set the window name.
+	# Set the window name
 	printf '\e]2;sf: %s\e'\\ "$PWD"
 }
 
-# List the contents of your current working directory.
+# List the contents of your current working directory
 list_dir() {
 	# Array variables to display directories first
 	local dirs
 	local files
 
-	# List item order.
+	# List item order
 	order=1
 
-	# Sort hidden files alternatively.
+	# Sort hidden files alternatively
 	# shopt $hide dotglob
 
 	# Add specific files in certain arrays
@@ -89,13 +89,13 @@ list_dir() {
 	done
 }
 
-# Depends on the filetype.
+# Depends on the filetype
 action() { [[ -d "$focus" ]] && { cd "$focus" && loc=1 ; } || xdg-open "$focus" >/dev/null 2>&1 ; }
 
-# Don't make an action if directory is empty.
+# Don't make an action if directory is empty
 avoid() { [[ "$focus" != "*" ]] ; }
 
-# This is really just the delete function.
+# This is really just the delete function
 delete() {
 	reset_terminal
 	printf "%s\\n\\t%s" "$focus" "Delete? [y/N]: "
@@ -103,7 +103,7 @@ delete() {
 	[[ "$ans" == "y" ]] && rm -rf "$focus"
 }
 
-# Rename your file [can also be used to move].
+# Rename your file [can also be used to move]
 rename() {
 	reset_terminal
 	printf "%s\\n\\t%s" "$focus" "Rename: "
@@ -112,7 +112,7 @@ rename() {
 	mv "$focus" "$ans"
 }
 
-# Create a new file.
+# Create a new file
 create_file() {
 	reset_terminal
 	printf "%s" "Create File: "
@@ -252,7 +252,7 @@ keys() {
 			[[ $hidden == 0 ]] && hidden=1 || hidden=0
 			shopt -"${shopt_flags[$hidden]}" dotglob
 
-			# Return cursor to the beginning.
+			# Return cursor to the beginning
 			loc=1
 			;;
 		?)
@@ -261,7 +261,7 @@ keys() {
 	esac
 }
 
-# The main function that runs every time.
+# The main function that runs every time
 main() {
 	while :; do
 		setup_terminal
@@ -273,5 +273,5 @@ main() {
 	done
 }
 
-# Call the main function.
+# Call the main function
 main
