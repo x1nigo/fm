@@ -96,7 +96,7 @@ print_dir() {
 action() { [[ -d "$focus" ]] && { cd "$focus" && scroll=1 ; } || xdg-open "$focus" >/dev/null 2>&1 ; }
 
 # Don't make an action if directory is empty
-avoid() { [[ "$focus" != "*" ]] ; }
+avoid() { [[ "$focus" != "empty" ]] ; }
 
 # This is really just the delete function
 delete() {
@@ -154,8 +154,7 @@ move() {
 }
 
 keybinds() {
-	setup_terminal
-
+	clear
 # Main output
 cat << EOF
 Keybindings:
@@ -215,27 +214,46 @@ keys() {
 			;;
 		# Action
 		[el]|'[C')
-			avoid && action && {
-				redraw
-			}
+			avoid && action
+			redraw
 			;;
 		# Go to previous directory
 		h|'[D')
-			cd ../ && scroll=1 && {
-				redraw
-			}
+			cd ../ && scroll=1
+			redraw
 			;;
 		# Go to home directory
 		'~')
-			cd && scroll=1 && {
+			cd && scroll=1
+			redraw
+			;;
+		# Copy file(s)
+		c)
+			avoid && copy && scroll=1 && {
+				setup_terminal
+				redraw
+			}
+			;;
+		# Move file(s)
+		m)
+			avoid && move && scroll=1 && {
+				setup_terminal
+				redraw
+			}
+			;;
+		# Rename a file/directory
+		R)
+			avoid && rename && {
+				setup_terminal
 				redraw
 			}
 			;;
 		# Delete a file
 		D)
-			avoid && delete && scroll=1
-			setup_terminal
-			redraw
+			avoid && delete && scroll=1 && {
+				setup_terminal
+				redraw
+			}
 			;;
 		# Create a file
 		N)
@@ -246,24 +264,6 @@ keys() {
 		# Create a directory
 		M)
 			create_dir
-			setup_terminal
-			redraw
-			;;
-		# Rename a file/directory
-		R)
-			avoid && rename
-			setup_terminal
-			redraw
-			;;
-		# Copy file(s)
-		c)
-			avoid && copy && scroll=1
-			setup_terminal
-			redraw
-			;;
-		# Move file(s)
-		m)
-			avoid && move && scroll=1
 			setup_terminal
 			redraw
 			;;
@@ -290,7 +290,11 @@ keys() {
 			redraw
 			;;
 		?)
-			keybinds
+			keybinds && {
+				clear
+				print_dir
+				status_line
+			}
 			;;
 	esac
 }
