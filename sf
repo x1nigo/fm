@@ -74,7 +74,11 @@ print_dir() {
 	for item in "${list[@]}"; do
 		# Directory
 		if [[ -d "$item" ]]; then
-			format='\e[m' && suffix='/'
+			format='\e[1m'
+			suffix='/'
+		elif [[ -x "$item" ]]; then
+			format='\e[3m'
+			suffix=
 		else
 			format='\e[m' && suffix=
 		fi
@@ -86,7 +90,7 @@ print_dir() {
 		fi
 
 		# Finally print the whole damn thing
-		printf "${format}%s${suffix}\e[0m\\n" \
+		printf "${format}%s${suffix}\e[m\\n" \
 			"$item"
 		((order+=1))
 	done
