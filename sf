@@ -82,7 +82,7 @@ print_dir() {
 		# Determine the area of focus
 		if [[ "$order" == "$scroll" ]]; then
 			focus="$item"
-			format='\e[1;31m*\e[m'
+			format='\e[1;31m*\e[m\e[1m'
 		fi
 
 		# Finally print the whole damn thing
