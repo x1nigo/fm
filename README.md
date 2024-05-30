@@ -4,7 +4,7 @@ A terminal file-manager written in `bash`. Doesn't really have a name, it's just
 
 ## Dependencies
 
-- `bash` &ndash; Obviously.
+- `bash`
 - `coreutils` &ndash; You probably already have these installed.
 - `xdg-utils` &ndash; For interacting with certain filetypes.
 
