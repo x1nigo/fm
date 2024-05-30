@@ -31,7 +31,7 @@ status_line() {
 		"$list_total"\
 		"$PWD"
 	# Set the window name
-	printf '\e]2;sf: %s\e'\\ "$PWD"
+	printf '\e]2;sf -:- %s\e'\\ "$PWD"
 }
 
 redraw() {
