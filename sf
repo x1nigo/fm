@@ -3,11 +3,6 @@
 # sf: A terminal file-manager written in bash
 # Created by Chris Iñigo <https://github.com/x1nigo>
 
-# Default variables
-hidden=0
-loc=1
-reset='\e[0m'
-
 # Setup the terminal
 setup_terminal() {
 	# Clear screen and hide cursor
@@ -27,36 +22,37 @@ reset_terminal()  {
 }
 
 # Prints the current directory
-current_dir() {
+status_line() {
 	# Print at the bottom of the terminal
 	LINES=$((LINES-1))
-	printf "\e[%sH\e[0;41;30m[%d/%d] %s\033[K${reset}" \
+	printf "\e[%sH\e[0;41;30m (%d/%d) %s\033[K\e[m" \
 		"$LINES" \
-		"$loc" \
-		"$total"\
+		"$scroll" \
+		"$list_total"\
 		"$PWD"
 	# Set the window name
 	printf '\e]2;sf: %s\e'\\ "$PWD"
 }
 
+redraw() {
+	read_dir
+	clear
+	print_dir
+	status_line
+}
+
 # List the contents of your current working directory
-list_dir() {
+read_dir() {
 	# Array variables to display directories first
 	local dirs
 	local files
 
-	# List item order
-	order=1
-
-	# Sort hidden files alternatively
-	# shopt $hide dotglob
-
 	# Add specific files in certain arrays
-	for i in *; do
-		if [[ -d "$i" ]]; then
-			dirs+=("$i")
+	for item in *; do
+		if [[ -d "$item" ]]; then
+			dirs+=("$item")
 		else
-			files+=("$i")
+			files+=("$item")
 		fi
 	done
 
@@ -67,37 +63,37 @@ list_dir() {
 	[[ ${list[0]} == "*" ]] && list[0]=empty
 
 	# Total number of files in array
-	total="${#list[@]}"
+	list_total="${#list[@]}"
+}
+
+print_dir() {
+	# List item order
+	order=1
 
 	# Format directories first then files
 	for item in "${list[@]}"; do
 		# Directory
 		if [[ -d "$item" ]]; then
-			prefix='\e[0;34m' && suffix='/'
-
-		# Executable file
-		elif [[ -x "$item" ]]; then
-			prefix='\e[0;32m' && suffix=
-
-		# Everything else
+			format='\e[m' && suffix='/'
 		else
-			prefix='\e[0m' && suffix=
+			format='\e[m' && suffix=
 		fi
 
 		# Determine the area of focus
-		if [[ "$order" == "$loc" ]]; then
+		if [[ "$order" == "$scroll" ]]; then
 			focus="$item"
-			prefix='\e[0;44;30m'
+			format='\e[1;31m*\e[m'
 		fi
 
 		# Finally print the whole damn thing
-		printf "${prefix}%s${suffix}${reset}\\n" "$item"
-		order=$((order+1))
+		printf "${format}%s${suffix}\e[0m\\n" \
+			"$item"
+		((order+=1))
 	done
 }
 
 # Depends on the filetype
-action() { [[ -d "$focus" ]] && { cd "$focus" && loc=1 ; } || xdg-open "$focus" >/dev/null 2>&1 ; }
+action() { [[ -d "$focus" ]] && { cd "$focus" && scroll=1 ; } || xdg-open "$focus" >/dev/null 2>&1 ; }
 
 # Don't make an action if directory is empty
 avoid() { [[ "$focus" != "*" ]] ; }
@@ -105,7 +101,7 @@ avoid() { [[ "$focus" != "*" ]] ; }
 # This is really just the delete function
 delete() {
 	reset_terminal
-	printf "%s\\n\\t%s" "$focus" "Delete? [y/N]: "
+	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Delete? [y/N]: "
 	read ans
 	[[ "$ans" == "y" ]] && rm -rf "$focus"
 }
@@ -113,7 +109,7 @@ delete() {
 # Rename your file [can also be used to move]
 rename() {
 	reset_terminal
-	printf "%s\\n\\t%s" "$focus" "Rename: "
+	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Rename: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	mv "$focus" "$ans"
@@ -122,7 +118,7 @@ rename() {
 # Create a new file
 create_file() {
 	reset_terminal
-	printf "%s" "Create File: "
+	printf "\e[1m%s\e[m" "Create File: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	touch "$ans"
@@ -131,7 +127,7 @@ create_file() {
 # Create a directory
 create_dir() {
 	reset_terminal
-	printf "%s" "Create Directory: "
+	printf "\e[1m%s\e[m" "Create Directory: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	mkdir -p "$ans"
@@ -140,7 +136,7 @@ create_dir() {
 # Copy files
 copy() {
 	reset_terminal
-	printf "%s\\n\\t%s" "$focus" "Copy to: "
+	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Copy to: "
 	trueloc="$(readlink -f "$focus")"
 	read ans
 	[[ -z "$ans" ]] && continue
@@ -150,7 +146,7 @@ copy() {
 # Move files
 move() {
 	reset_terminal
-	printf "%s\\n\\t%s" "$focus" "Move to: "
+	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Move to: "
 	trueloc="$(readlink -f "$focus")"
 	read ans
 	[[ -z "$ans" ]] && continue
@@ -187,23 +183,31 @@ EOF
 	read -r enter
 }
 
-# Keybindings
 keys() {
-	# Enable the use of arrow keys
+	# Allow arrow keys to work
 	escape_char=$(printf "\u1b")
 	if [[ $input == $escape_char ]]; then
-		read -rsn 2 input # read 2 more chars
+		read -rsn 2 input
 	fi
 
-	# The main list of keys
-	case "$input" in
+	case "${input}" in
 		# Go down
 		j|'[B')
-			[[ "$loc" -lt "$total" ]] && loc=$((loc+1))
+			if [[ "$scroll" -lt "$list_total" ]]; then
+				((scroll++))
+				clear
+				print_dir
+				status_line
+			fi
 			;;
 		# Go up
 		k|'[A')
-			[[ "$loc" -gt 1 ]] && loc=$((loc-1))
+			if [[ "$scroll" -gt 1 ]]; then
+				((scroll--))
+				clear
+				print_dir
+				status_line
+			fi
 			;;
 		# Quit
 		q)
@@ -211,19 +215,25 @@ keys() {
 			;;
 		# Action
 		[el]|'[C')
-			avoid && action
+			avoid && action && {
+				redraw
+			}
 			;;
 		# Go to previous directory
 		h|'[D')
-			cd ../ && loc=1
+			cd ../ && scroll=1 && {
+				redraw
+			}
 			;;
 		# Go to home directory
 		'~')
-			cd && loc=1
+			cd && scroll=1 && {
+				redraw
+			}
 			;;
 		# Delete a file
 		D)
-			avoid && delete && loc=1
+			avoid && delete && scroll=1
 			;;
 		# Create a file
 		N)
@@ -239,11 +249,17 @@ keys() {
 			;;
 		# Go to top of list
 		g)
-			loc=1
+			scroll=1
+			clear
+			print_dir
+			status_line
 			;;
 		# Go to bottom of list
 		G)
-			loc="$total"
+			scroll="$list_total"
+			clear
+			print_dir
+			status_line
 			;;
 		# Copy file(s)
 		c)
@@ -251,16 +267,15 @@ keys() {
 			;;
 		# Move file(s)
 		m)
-			avoid && move && loc=1
+			avoid && move && scroll=1
 			;;
 		# Show hidden files
 		.)
 			shopt_flags=(u s)
 			[[ $hidden == 0 ]] && hidden=1 || hidden=0
 			shopt -"${shopt_flags[$hidden]}" dotglob
-
-			# Return cursor to the beginning
-			loc=1
+			scroll=1
+			redraw
 			;;
 		?)
 			keybinds
@@ -270,15 +285,13 @@ keys() {
 
 # The main function that runs every time
 main() {
+	hidden=0
+	scroll=1
+	setup_terminal
+	redraw
 	while :; do
-		setup_terminal
-		list_dir
-		current_dir
-		read -srn 1 input
-		[ -z "$input" ] && continue
-		keys
+		read -srn 1 input && keys
 	done
 }
 
-# Call the main function
 main
