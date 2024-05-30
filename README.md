@@ -4,7 +4,7 @@ A terminal file-manager written in `bash`. Doesn't really have a name, it's just
 
 ## Dependencies
 
-- `bash`
+- `bash` &ndash; Definitely need this.
 - `coreutils` &ndash; You probably already have these installed.
 - `xdg-utils` &ndash; For interacting with certain filetypes.
 
@@ -20,4 +20,4 @@ You may need to use root permission to `make install` it just in case.
 
 ## Notes
 
-This is not a fork of `fff` but it is inspired by it. I've always wanted to write my own terminal file-manager using shell scripting syntax.
+Inspired by [fff](https://github.com/dylanaraps/fff). I've always wanted to write my own terminal file-manager using shell scripting syntax.
