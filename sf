@@ -234,18 +234,38 @@ keys() {
 		# Delete a file
 		D)
 			avoid && delete && scroll=1
+			setup_terminal
+			redraw
 			;;
 		# Create a file
 		N)
 			create_file
+			setup_terminal
+			redraw
 			;;
 		# Create a directory
 		M)
 			create_dir
+			setup_terminal
+			redraw
 			;;
 		# Rename a file/directory
 		R)
 			avoid && rename
+			setup_terminal
+			redraw
+			;;
+		# Copy file(s)
+		c)
+			avoid && copy && scroll=1
+			setup_terminal
+			redraw
+			;;
+		# Move file(s)
+		m)
+			avoid && move && scroll=1
+			setup_terminal
+			redraw
 			;;
 		# Go to top of list
 		g)
@@ -260,14 +280,6 @@ keys() {
 			clear
 			print_dir
 			status_line
-			;;
-		# Copy file(s)
-		c)
-			avoid && copy
-			;;
-		# Move file(s)
-		m)
-			avoid && move && scroll=1
 			;;
 		# Show hidden files
 		.)
