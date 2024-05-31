@@ -25,7 +25,7 @@ reset_terminal()  {
 status_line() {
 	# Print at the bottom of the terminal
 	LINES=$((LINES-1))
-	printf "\e[%sH\e[0;41;30m (%d/%d) %s\033[K\e[m" \
+	printf "\e[%sH\e[1m (%d/%d) %s\033[K\e[m" \
 		"$LINES" \
 		"$scroll" \
 		"$list_total"\
@@ -86,11 +86,11 @@ print_dir() {
 		# Determine the area of focus
 		if [[ "$order" == "$scroll" ]]; then
 			focus="$item"
-			format='\e[1;31m*\e[m\e[1m'
+			format='\e[1;30;41m'
 		fi
 
 		# Finally print the whole damn thing
-		printf "${format}%s${suffix}\e[m\\n" \
+		printf "${format}%s${suffix}\033[K\e[m\\n" \
 			"$item"
 		((order+=1))
 	done
@@ -166,7 +166,7 @@ Keybindings:
 j	go down
 k	go up
 q	quit
-e/l	interact
+l	interact
 h	go to previous directory
 ~	go to home directory
 D	delete
@@ -217,12 +217,17 @@ keys() {
 			reset_terminal && exit
 			;;
 		# Action
-		[el]|'[C')
+		l|\
+		'[C'|\
+		'[OC'|\
+		'')
 			avoid && action
 			redraw
 			;;
 		# Go to previous directory
-		h|'[D')
+		h|\
+		'[D'|\
+		'[OD')
 			cd ../ && scroll=1
 			redraw
 			;;
