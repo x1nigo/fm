@@ -9,6 +9,7 @@ This is still a work in progress. As such it still lacks more features, but it w
 - `bash` &ndash; Definitely need this.
 - `coreutils` &ndash; You probably already have these installed.
 - `xdg-utils` &ndash; For interacting with certain filetypes.
+- `fzf` &ndash; (optional) For copying/moving files.
 
 ## How to install
 
