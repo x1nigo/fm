@@ -2,6 +2,8 @@
 
 A terminal file-manager written in `bash`. Doesn't really have a name, it's just easy to type `sf` on the keyboard.
 
+This is still a work in progress. As such it still lacks more features, but it works.
+
 ## Dependencies
 
 - `bash` &ndash; Definitely need this.
