@@ -24,14 +24,18 @@ reset_terminal()  {
 # Prints the current directory
 status_line() {
 	# Print at the bottom of the terminal
-	LINES=$((LINES-1))
-	printf "\e[%sH\e[1m (%d/%d) %s\033[K\e[m" \
-		"$LINES" \
+	printf "\e[%sH\e[1m(%d/%d) %s\033[K\e[m" \
+		"$((LINES-1))" \
 		"$scroll" \
 		"$list_total"\
 		"$PWD"
 	# Set the window name
 	printf '\e]2;sf -:- %s\e'\\ "$PWD"
+}
+
+command_line() {
+	printf '\e[%sH\e[?25h%s' "$((LINES))" "$1"
+	stty echo
 }
 
 redraw() {
@@ -104,16 +108,14 @@ avoid() { [[ "$focus" != "empty" ]] ; }
 
 # This is really just the delete function
 delete() {
-	reset_terminal
-	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Delete? [y/N]: "
-	read ans
+	command_line "Delete \"$focus\"? [y/N] "
+	read -n 1 ans
 	[[ "$ans" == "y" ]] && rm -rf "$focus"
 }
 
 # Rename your file [can also be used to move]
 rename() {
-	reset_terminal
-	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Rename: "
+	command_line "\"$focus\" Rename: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	mv "$focus" "$ans"
@@ -121,8 +123,7 @@ rename() {
 
 # Create a new file
 create_file() {
-	reset_terminal
-	printf "\e[1m%s\e[m" "Create File: "
+	command_line "New file: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	touch "$ans"
@@ -130,8 +131,7 @@ create_file() {
 
 # Create a directory
 create_dir() {
-	reset_terminal
-	printf "\e[1m%s\e[m" "Create Directory: "
+	command_line "New directory: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	mkdir -p "$ans"
@@ -139,9 +139,7 @@ create_dir() {
 
 # Copy files
 copy() {
-	reset_terminal
-	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Copy to: "
-	trueloc="$(readlink -f "$focus")"
+	command_line "Copy \"$focus\" to: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	cp -vr "$focus" "$ans"
@@ -149,9 +147,7 @@ copy() {
 
 # Move files
 move() {
-	reset_terminal
-	printf "\e[1m%s\\n\\t%s\e[m" "$focus" "Move to: "
-	trueloc="$(readlink -f "$focus")"
+	command_line "Move \"$focus\" to: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	mv "$focus" "$ans"
@@ -238,31 +234,27 @@ keys() {
 			;;
 		# Copy file(s)
 		c)
-			avoid && copy && scroll=1 && {
-				setup_terminal
-				redraw
-			}
+			avoid && copy && scroll=1
+			setup_terminal
+			redraw
 			;;
 		# Move file(s)
 		m)
-			avoid && move && scroll=1 && {
-				setup_terminal
-				redraw
-			}
+			avoid && move && scroll=1
+			setup_terminal
+			redraw
 			;;
 		# Rename a file/directory
 		R)
-			avoid && rename && {
-				setup_terminal
-				redraw
-			}
+			avoid && rename
+			setup_terminal
+			redraw
 			;;
 		# Delete a file
 		D)
-			avoid && delete && scroll=1 && {
-				setup_terminal
-				redraw
-			}
+			avoid && delete && scroll=1
+			setup_terminal
+			redraw
 			;;
 		# Create a file
 		N)
