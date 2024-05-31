@@ -30,7 +30,7 @@ status_line() {
 		"$list_total"\
 		"$PWD"
 	# Set the window name
-	printf '\e]2;sf -:- %s\e'\\ "$PWD"
+	printf '\e]2;SF -:- %s\e'\\ "$PWD"
 }
 
 command_line() {
@@ -78,10 +78,10 @@ print_dir() {
 	for item in "${list[@]}"; do
 		# Directory
 		if [[ -d "$item" ]]; then
-			format='\e[1m'
+			format='\e[1;34m'
 			suffix='/'
 		elif [[ -x "$item" ]]; then
-			format='\e[3m'
+			format='\e[1;32m'
 			suffix=
 		else
 			format='\e[m' && suffix=
@@ -139,18 +139,32 @@ create_dir() {
 
 # Copy files
 copy() {
-	command_line "Copy \"$focus\" to: "
-	read ans
-	[[ -z "$ans" ]] && continue
-	cp -vr "$focus" "$ans"
+	if [[ -x "$(command -v fzf)" ]]; then
+		reset_terminal
+		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Copy to: ')"
+		[[ -z "$dest" ]] && continue
+		cp -r "$focus" "$dest"
+	else
+		command_line "Copy \"$focus\" to: "
+		read ans
+		[[ -z "$ans" ]] && continue
+		cp -vr "$focus" "$ans"
+	fi
 }
 
 # Move files
 move() {
-	command_line "Move \"$focus\" to: "
-	read ans
-	[[ -z "$ans" ]] && continue
-	mv "$focus" "$ans"
+	if [[ -x "$(command -v fzf)" ]]; then
+		reset_terminal
+		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Move to: ')"
+		[[ -z "$dest" ]] && continue
+		mv "$focus" "$dest"
+	else
+		command_line "Move \"$focus\" to: "
+		read ans
+		[[ -z "$ans" ]] && continue
+		mv "$focus" "$ans"
+	fi
 }
 
 keybinds() {
