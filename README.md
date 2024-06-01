@@ -1,13 +1,11 @@
 # sf
 
-A terminal file-manager written in `bash`. Doesn't really have a name, it's just easy to type `sf` on the keyboard.
-
-This is still a work in progress. As such it still lacks more features, but it works.
+A terminal file-manager written in `bash`. This is still a work in progress. As such it still lacks more features, but it works.
 
 ## Dependencies
 
-- `bash` &ndash; Definitely need this.
-- `coreutils` &ndash; You probably already have these installed.
+- `bash` &ndash; The bourne-again shell.
+- `coreutils` &ndash; Most likely already installed.
 - `xdg-utils` &ndash; For interacting with certain filetypes.
 - `fzf` &ndash; (optional) For copying/moving files.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# SF: A terminal file-manager written in bash
-# Created by Chris Iñigo <https://github.com/x1nigo>
+# sf - a terminal file-manager
+# Created by Chris Iñigo <https://github.com/x1nigo/sf>
 
 # Setup the terminal
 setup_terminal() {
@@ -24,13 +24,13 @@ reset_terminal()  {
 # Prints the current directory
 status_line() {
 	# Print at the bottom of the terminal
-	printf "\e[%sH\e[1m(%d/%d) %s\033[K\e[m" \
+	printf "\e[%sH\e[m(%d/%d) %s\e[m" \
 		"$((LINES-1))" \
 		"$scroll" \
 		"$list_total"\
 		"$PWD"
 	# Set the window name
-	printf '\e]2;SF -:- %s\e'\\ "$PWD"
+	printf '\e]2;sf %s\e'\\ "$PWD"
 }
 
 command_line() {
@@ -72,7 +72,10 @@ read_dir() {
 
 print_dir() {
 	for ((i=0;i<$list_total;i++)) {
-		if [[ -d "${list[$i]}" ]]; then
+		# If the dir item doesn't exist, end here.
+		if [[ ${list[0]} == "*" ]]; then
+			return
+		elif [[ -d "${list[$i]}" ]]; then
 			format='\e[1m'
 			suffix=/
 		elif [[ -x "${list[$i]}" ]]; then
@@ -83,35 +86,56 @@ print_dir() {
 			suffix=
 		fi
 
+		if [[ "${marked_files[@]}" =~ "${list[$i]}" ]]; then
+			format='\e[1;31m'
+			suffix=*
+		fi
+		# Use '\033[K' if you want to extend it to the end of the line
 		if [[ $((i+1)) == $scroll ]]; then
-			focus="${list[$i]}"
 			format='\e[1;30;41m'
 		fi
 
 		# Print the formatted line
-		# Use '\033[K' if you want to extend it to the end of the line
-		printf "${format}%s${suffix}\033[K\e[m\\n" "${list[$i]}"
+		printf "${format}%s${suffix}\e[m\\n" "${list[$i]}"
 	}
 }
 
-action() { [[ -d "$focus" ]] && { cd "$focus" && scroll=1 ; } || xdg-open "$focus" >/dev/null 2>&1 ; }
+action() {
+	[[ -d "${list[((scroll-1))]}" ]] && { cd "${list[((scroll-1))]}" && scroll=1 ; } &&
+		printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d || \
+#		xdg-open "${list[((scroll-1))]}" >/dev/null 2>&1
+		case "$(file --mime-type -b "${list[((scroll-1))]}")" in
+			audio/*|video/*)
+				mpv "${list[((scroll-1))]}"
+				;;
+			image/*)
+				nsxiv "${list[((scroll-1))]}"
+				;;
+			*/pdf)
+				zathura "${list[((scroll-1))]}"
+				;;
+			*)
+				$EDITOR "${list[((scroll-1))]}"
+				;;
+		esac
+}
 
 # Don't make an action if directory is empty
-avoid() { [[ "$focus" != "empty" ]] ; }
+avoid() { [[ "${list[((scroll-1))]}" != "empty" ]] ; }
 
 # This is really just the delete function
 delete() {
-	command_line "Delete \"$focus\"? [y/N] "
+	command_line "Delete \"${list[((scroll-1))]}\"? [y/N] "
 	read -n 1 ans
-	[[ "$ans" == "y" ]] && rm -rf "$focus"
+	[[ "$ans" == "y" ]] && rm -rf "${list[((scroll-1))]}"
 }
 
 # Rename your file [can also be used to move]
 rename() {
-	command_line "\"$focus\" Rename: "
+	command_line "\"${list[((scroll-1))]}\" Rename: "
 	read ans
 	[[ -z "$ans" ]] && continue
-	mv "$focus" "$ans"
+	mv "${list[((scroll-1))]}" "$ans"
 }
 
 # Create a new file
@@ -136,12 +160,12 @@ copy() {
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Copy to: ')"
 		[[ -z "$dest" ]] && continue
-		cp -r "$focus" "$dest"
+		cp -r "${list[((scroll-1))]}" "$dest"
 	else
-		command_line "Copy \"$focus\" to: "
+		command_line "Copy \"${list[((scroll-1))]}\" to: "
 		read ans
 		[[ -z "$ans" ]] && continue
-		cp -vr "$focus" "$ans"
+		cp -vr "${list[((scroll-1))]}" "$ans"
 	fi
 }
 
@@ -151,13 +175,44 @@ move() {
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Move to: ')"
 		[[ -z "$dest" ]] && continue
-		mv "$focus" "$dest"
+		mv "${list[((scroll-1))]}" "$dest"
 	else
-		command_line "Move \"$focus\" to: "
+		command_line "Move \"${list[((scroll-1))]}\" to: "
 		read ans
 		[[ -z "$ans" ]] && continue
-		mv "$focus" "$ans"
+		mv "${list[((scroll-1))]}" "$ans"
 	fi
+}
+
+# Mark files for further action
+mark_file() {
+	marked_files+=("${list[((scroll-1))]}")
+}
+
+bulk_rename() {
+	tmpfile_old="$(mktemp)"
+	tmpfile_new="$(mktemp)"
+	tmpfile_final="$(mktemp)"
+
+	[[ -z ${marked_files[0]} ]] && return
+
+	for ((i=0;i<${#marked_files[@]};i++)) {
+		echo "${marked_files[$i]}" >> "$tmpfile_old"
+		echo "${marked_files[$i]}" >> "$tmpfile_new"
+	}
+	# Use your favorite text editor
+	$EDITOR "$tmpfile_new"
+
+	[[ "$(wc -l < "$tmpfile_old")" -eq "$(wc -l < "$tmpfile_new")" ]] ||
+		{ rm -rf "$tmpfile_old" "$tmpfile_new"; continue; }
+
+	paste "$tmpfile_old" "$tmpfile_new" | while IFS="$(printf '\t')" read -r src dst
+    do
+        [[ "$src" == "$dst" ]] || [[ -e "$dst" ]] || mv -- "$src" "$dst"
+    done
+
+	# Remove the temporary files
+	rm -f "$tmpfile_old" "$tmpfile_new"
 }
 
 keybinds() {
@@ -190,15 +245,13 @@ EOF
 }
 
 keys() {
-	# Allow arrow keys to work
-	escape_char=$(printf "\u1b")
-	if [[ $input == $escape_char ]]; then
-		read -rsn 2 input
-	fi
-
-	case "${input}" in
+# 	[[ $1 == $'\e' ]] && {
+# 		read -srn 2 key
+# 		special=${1}${key}
+# 	}
+	case $1 in
 		# Go down
-		j|'[B')
+		j|$'\e[B')
 			if [[ "$scroll" -lt "$list_total" ]]; then
 				((scroll++))
 				clear
@@ -207,7 +260,7 @@ keys() {
 			fi
 			;;
 		# Go up
-		k|'[A')
+		k|$'\e[A')
 			if [[ "$scroll" -gt 1 ]]; then
 				((scroll--))
 				clear
@@ -221,29 +274,46 @@ keys() {
 			;;
 		# Action
 		l|\
-		'[C'|\
-		'[OC'|\
+		$'\e[C'|\
+		$'\e[OC'|\
 		'')
 			avoid && action
+			setup_terminal
 			redraw
 			;;
 		# Go to previous directory
 		h|\
-		'[D'|\
-		'[OD')
+		$'\e[D'|\
+		$'\e[OD')
 			cd ../ && scroll=1
+			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
 			redraw
 			;;
 		# Go to home directory
 		'~')
 			cd && scroll=1
+			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
+			redraw
+			;;
+		# Mark file(s) - spacebar
+		' ')
+			mark_file
+			setup_terminal
+			print_dir
+			status_line
+			;;
+		# Bulk rename
+		b)
+			bulk_rename
+			setup_terminal
 			redraw
 			;;
 		# Copy file(s)
 		c)
 			avoid && copy && scroll=1
 			setup_terminal
-			redraw
+			print_dir
+			status_line
 			;;
 		# Move file(s)
 		m)
@@ -309,12 +379,13 @@ keys() {
 
 # The main function that runs every time
 main() {
+	mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/sf"
 	hidden=0
 	scroll=1
 	setup_terminal
 	redraw
 	while :; do
-		read -srn 1 input && keys
+		read -srn 1 && keys "$REPLY"
 	done
 }
 
