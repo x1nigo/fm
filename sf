@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# sf: A terminal file-manager written in bash
+# SF: A terminal file-manager written in bash
 # Created by Chris Iñigo <https://github.com/x1nigo>
 
 # Setup the terminal
@@ -71,36 +71,29 @@ read_dir() {
 }
 
 print_dir() {
-	# List item order
-	order=1
-
-	# Format directories first then files
-	for item in "${list[@]}"; do
-		# Directory
-		if [[ -d "$item" ]]; then
-			format='\e[1;34m'
-			suffix='/'
-		elif [[ -x "$item" ]]; then
-			format='\e[1;32m'
+	for ((i=0;i<$list_total;i++)) {
+		if [[ -d "${list[$i]}" ]]; then
+			format='\e[1m'
+			suffix=/
+		elif [[ -x "${list[$i]}" ]]; then
+			format='\e[3m'
 			suffix=
 		else
-			format='\e[m' && suffix=
+			format='\e[m'
+			suffix=
 		fi
 
-		# Determine the area of focus
-		if [[ "$order" == "$scroll" ]]; then
-			focus="$item"
+		if [[ $((i+1)) == $scroll ]]; then
+			focus="${list[$i]}"
 			format='\e[1;30;41m'
 		fi
 
-		# Finally print the whole damn thing
-		printf "${format}%s${suffix}\033[K\e[m\\n" \
-			"$item"
-		((order+=1))
-	done
+		# Print the formatted line
+		# Use '\033[K' if you want to extend it to the end of the line
+		printf "${format}%s${suffix}\033[K\e[m\\n" "${list[$i]}"
+	}
 }
 
-# Depends on the filetype
 action() { [[ -d "$focus" ]] && { cd "$focus" && scroll=1 ; } || xdg-open "$focus" >/dev/null 2>&1 ; }
 
 # Don't make an action if directory is empty
