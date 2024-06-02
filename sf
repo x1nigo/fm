@@ -131,9 +131,19 @@ avoid() { [[ "${list[scroll]}" != "empty" ]] ; }
 
 # This is really just the delete function
 delete() {
-	cmd_line "Delete \"${list[scroll]}\"? [y/N] "
+	cmd_line "Delete file(s)? [y/N] "
 	read -n 1 ans
-	[[ "$ans" == "y" ]] && rm -rf "${list[scroll]}"
+	[[ "$ans" != "y" ]] && return
+
+	# Delete marked files
+	if [[ -z ${marked_files[@]} ]]; then
+		rm -rf "${list[scroll]}"
+	else
+		for i in "${marked_files[@]}"; do
+			rm -rf "$i"
+		done
+		marked_files=()
+	fi
 }
 
 # Rename your file [can also be used to move]
@@ -166,7 +176,16 @@ copy() {
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Copy to: ')"
 		[[ -z "$dest" ]] && continue
-		cp -r "${list[scroll]}" "$dest"
+
+		# Copy marked files
+		if [[ -z ${marked_files[@]} ]]; then
+			cp -r "${list[scroll]}" "$dest"
+		else
+			for i in "${marked_files[@]}"; do
+				cp -r "$i" "$dest"
+			done
+			marked_files=()
+		fi
 	else
 		cmd_line "Copy \"${list[scroll]}\" to: "
 		read ans
@@ -181,7 +200,16 @@ move() {
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Move to: ')"
 		[[ -z "$dest" ]] && continue
-		mv "${list[scroll]}" "$dest"
+
+		# Move marked files
+		if [[ -z ${marked_files[@]} ]]; then
+			mv "${list[scroll]}" "$dest"
+		else
+			for i in "${marked_files[@]}"; do
+				mv "$i" "$dest"
+			done
+			marked_files=()
+		fi
 	else
 		cmd_line "Move \"${list[scroll]}\" to: "
 		read ans
@@ -326,8 +354,7 @@ keys() {
 		c)
 			avoid && copy && scroll=0
 			setup_terminal
-			print_dir
-			status_line
+			redraw
 			;;
 		# Move file(s)
 		m)
