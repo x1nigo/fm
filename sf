@@ -109,19 +109,22 @@ draw_dir() {
 action() {
 	[[ -d "${list[scroll]}" ]] && { cd "${list[scroll]}" && scroll=0 ; } &&
 		printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d || \
-#		xdg-open "${list[scroll]}" >/dev/null 2>&1
 		case "$(file --mime-type -b "${list[scroll]}")" in
 			audio/*|video/*)
-				mpv "${list[scroll]}"
+				mpv "${list[scroll]}" ||
+					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
 			image/*)
-				nsxiv "${list[scroll]}"
+				nsxiv "${list[scroll]}" ||
+					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
 			*/pdf)
-				zathura "${list[scroll]}"
+				zathura "${list[scroll]}" ||
+					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
 			*)
-				$EDITOR "${list[scroll]}"
+				$EDITOR "${list[scroll]}" ||
+					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
 		esac
 }
@@ -259,22 +262,24 @@ keybinds() {
 cat << EOF
 Keybindings:
 
-j	go down
-k	go up
-q	quit
-l	interact
-h	go to previous directory
-~	go to home directory
-D	delete
-N	new file
-M	new directory
-R	rename
-g	go to top
-G	go to botttom
-c	copy
-m	move
-.	show/hide hidden files
-?	read this help page
+j		go down
+k		go up
+q		quit
+l		interact
+h		go to previous directory
+~		go to home directory
+space	mark a file
+D		delete
+N		new file
+M		new directory
+R		rename
+b		bulk rename (only with marked files)
+g		go to top
+G		go to botttom
+c		copy
+m		move
+.		show/hide hidden files
+?		read this help page
 EOF
 
 	# Wait for user to press return
