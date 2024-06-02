@@ -382,7 +382,7 @@ keys() {
 		?)
 			keybinds && {
 				clear
-				print_dir
+				draw_dir
 				status_line
 			}
 			;;
