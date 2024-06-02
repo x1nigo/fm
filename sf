@@ -279,6 +279,7 @@ G		go to botttom
 c		copy
 m		move
 .		show/hide hidden files
+@		refresh the file-manager
 ?		read this help page
 EOF
 
@@ -409,6 +410,10 @@ keys() {
 			[[ $hidden == 0 ]] && hidden=1 || hidden=0
 			shopt -"${shopt_flags[$hidden]}" dotglob
 			scroll=0
+			redraw
+			;;
+		@)
+			setup_terminal
 			redraw
 			;;
 		?)
