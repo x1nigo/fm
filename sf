@@ -24,16 +24,16 @@ reset_terminal()  {
 # Prints the current directory
 status_line() {
 	# Print at the bottom of the terminal
-	printf "\e[%sH\e[m(%d/%d) %s\e[m" \
+	printf "\e[%sH\e[m(%d/%d) %s\033[K\e[m" \
 		"$((LINES-1))" \
-		"$scroll" \
+		"$((scroll+1))" \
 		"$list_total"\
 		"$PWD"
 	# Set the window name
 	printf '\e]2;sf %s\e'\\ "$PWD"
 }
 
-command_line() {
+cmd_line() {
 	printf '\e[%sH\e[?25h%s' "$((LINES))" "$1"
 	stty echo
 }
@@ -41,7 +41,7 @@ command_line() {
 redraw() {
 	read_dir
 	clear
-	print_dir
+	draw_dir
 	status_line
 }
 
@@ -71,76 +71,82 @@ read_dir() {
 }
 
 print_dir() {
-	for ((i=0;i<$list_total;i++)) {
+	local format
+	local suffix
+
 		# If the dir item doesn't exist, end here.
 		if [[ ${list[0]} == "*" ]]; then
 			return
-		elif [[ -d "${list[$i]}" ]]; then
+		elif [[ -d ${list[$1]} ]]; then
 			format='\e[1m'
 			suffix=/
-		elif [[ -x "${list[$i]}" ]]; then
+		elif [[ -x ${list[$1]} ]]; then
 			format='\e[3m'
-			suffix=
-		else
-			format='\e[m'
-			suffix=
 		fi
 
-		if [[ "${marked_files[@]}" =~ "${list[$i]}" ]]; then
+		if [[ ${marked_files[@]} =~ ${list[$1]} ]]; then
 			format='\e[1;31m'
 			suffix=*
 		fi
+
 		# Use '\033[K' if you want to extend it to the end of the line
-		if [[ $((i+1)) == $scroll ]]; then
-			format='\e[1;30;41m'
+		if [[ $1 == $scroll ]]; then
+			format+='\e[1;30;41m'
 		fi
 
 		# Print the formatted line
-		printf "${format}%s${suffix}\e[m\\n" "${list[$i]}"
+		printf "\r${format}%s${suffix}\e[m\r" "${list[$1]}"
+}
+
+draw_dir() {
+	printf '\e[H'
+	for ((i=0;i<$list_total;i++)) {
+		print_dir "$i"
+		printf '\n'
 	}
 }
 
 action() {
-	[[ -d "${list[((scroll-1))]}" ]] && { cd "${list[((scroll-1))]}" && scroll=1 ; } &&
+	[[ -d "${list[scroll]}" ]] && { cd "${list[scroll]}" && scroll=0 ; } &&
 		printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d || \
-#		xdg-open "${list[((scroll-1))]}" >/dev/null 2>&1
-		case "$(file --mime-type -b "${list[((scroll-1))]}")" in
+#		xdg-open "${list[scroll]}" >/dev/null 2>&1
+		case "$(file --mime-type -b "${list[scroll]}")" in
 			audio/*|video/*)
-				mpv "${list[((scroll-1))]}"
+				mpv "${list[scroll]}"
 				;;
 			image/*)
-				nsxiv "${list[((scroll-1))]}"
+				nsxiv "${list[scroll]}"
 				;;
 			*/pdf)
-				zathura "${list[((scroll-1))]}"
+				zathura "${list[scroll]}"
 				;;
 			*)
-				$EDITOR "${list[((scroll-1))]}"
+				$EDITOR "${list[scroll]}"
 				;;
 		esac
 }
 
 # Don't make an action if directory is empty
-avoid() { [[ "${list[((scroll-1))]}" != "empty" ]] ; }
+avoid() { [[ "${list[scroll]}" != "empty" ]] ; }
 
 # This is really just the delete function
 delete() {
-	command_line "Delete \"${list[((scroll-1))]}\"? [y/N] "
+	cmd_line "Delete \"${list[scroll]}\"? [y/N] "
 	read -n 1 ans
-	[[ "$ans" == "y" ]] && rm -rf "${list[((scroll-1))]}"
+	[[ "$ans" == "y" ]] && rm -rf "${list[scroll]}"
 }
 
 # Rename your file [can also be used to move]
 rename() {
-	command_line "\"${list[((scroll-1))]}\" Rename: "
+	cmd_line "\"${list[scroll]}\" Rename: "
 	read ans
 	[[ -z "$ans" ]] && continue
-	mv "${list[((scroll-1))]}" "$ans"
+	mv "${list[scroll]}" "$ans"
 }
 
 # Create a new file
 create_file() {
-	command_line "New file: "
+	cmd_line "New file: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	touch "$ans"
@@ -148,7 +154,7 @@ create_file() {
 
 # Create a directory
 create_dir() {
-	command_line "New directory: "
+	cmd_line "New directory: "
 	read ans
 	[[ -z "$ans" ]] && continue
 	mkdir -p "$ans"
@@ -160,12 +166,12 @@ copy() {
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Copy to: ')"
 		[[ -z "$dest" ]] && continue
-		cp -r "${list[((scroll-1))]}" "$dest"
+		cp -r "${list[scroll]}" "$dest"
 	else
-		command_line "Copy \"${list[((scroll-1))]}\" to: "
+		cmd_line "Copy \"${list[scroll]}\" to: "
 		read ans
 		[[ -z "$ans" ]] && continue
-		cp -vr "${list[((scroll-1))]}" "$ans"
+		cp -vr "${list[scroll]}" "$ans"
 	fi
 }
 
@@ -175,26 +181,29 @@ move() {
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Move to: ')"
 		[[ -z "$dest" ]] && continue
-		mv "${list[((scroll-1))]}" "$dest"
+		mv "${list[scroll]}" "$dest"
 	else
-		command_line "Move \"${list[((scroll-1))]}\" to: "
+		cmd_line "Move \"${list[scroll]}\" to: "
 		read ans
 		[[ -z "$ans" ]] && continue
-		mv "${list[((scroll-1))]}" "$ans"
+		mv "${list[scroll]}" "$ans"
 	fi
 }
 
 # Mark files for further action
 mark_file() {
-	marked_files+=("${list[((scroll-1))]}")
+	if [[ ${marked_files[@]} =~ ${list[scroll]} ]]; then
+		marked_files=("${marked_files[@]/${list[scroll]}}")
+	else
+		marked_files+=("${list[scroll]}")
+	fi
 }
 
 bulk_rename() {
 	tmpfile_old="$(mktemp)"
 	tmpfile_new="$(mktemp)"
-	tmpfile_final="$(mktemp)"
 
-	[[ -z ${marked_files[0]} ]] && return
+	[[ -z ${marked_files[@]} ]] && return
 
 	for ((i=0;i<${#marked_files[@]};i++)) {
 		echo "${marked_files[$i]}" >> "$tmpfile_old"
@@ -213,6 +222,7 @@ bulk_rename() {
 
 	# Remove the temporary files
 	rm -f "$tmpfile_old" "$tmpfile_new"
+	marked_files=()
 }
 
 keybinds() {
@@ -252,19 +262,23 @@ keys() {
 	case $1 in
 		# Go down
 		j|$'\e[B')
-			if [[ "$scroll" -lt "$list_total" ]]; then
+			if [[ "$scroll" -lt "$((list_total-1))" ]]; then
 				((scroll++))
-				clear
-				print_dir
+				printf '\e[%sH' "$scroll"
+				print_dir "$((scroll-1))"
+				printf '\n'
+				print_dir "$scroll"
 				status_line
 			fi
 			;;
 		# Go up
 		k|$'\e[A')
-			if [[ "$scroll" -gt 1 ]]; then
+			if [[ "$scroll" -gt 0 ]]; then
 				((scroll--))
-				clear
-				print_dir
+				printf '\e[%sH' "$((scroll+2))"
+				print_dir "$((scroll+1))"
+				printf '\e[A'
+				print_dir "$scroll"
 				status_line
 			fi
 			;;
@@ -285,13 +299,13 @@ keys() {
 		h|\
 		$'\e[D'|\
 		$'\e[OD')
-			cd ../ && scroll=1
+			cd ../ && scroll=0
 			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
 			redraw
 			;;
 		# Go to home directory
 		'~')
-			cd && scroll=1
+			cd && scroll=0
 			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
 			redraw
 			;;
@@ -299,7 +313,7 @@ keys() {
 		' ')
 			mark_file
 			setup_terminal
-			print_dir
+			draw_dir
 			status_line
 			;;
 		# Bulk rename
@@ -310,14 +324,14 @@ keys() {
 			;;
 		# Copy file(s)
 		c)
-			avoid && copy && scroll=1
+			avoid && copy && scroll=0
 			setup_terminal
 			print_dir
 			status_line
 			;;
 		# Move file(s)
 		m)
-			avoid && move && scroll=1
+			avoid && move && scroll=0
 			setup_terminal
 			redraw
 			;;
@@ -329,7 +343,7 @@ keys() {
 			;;
 		# Delete a file
 		D)
-			avoid && delete && scroll=1
+			avoid && delete && scroll=0
 			setup_terminal
 			redraw
 			;;
@@ -347,16 +361,14 @@ keys() {
 			;;
 		# Go to top of list
 		g)
-			scroll=1
-			clear
-			print_dir
+			scroll=0
+			draw_dir
 			status_line
 			;;
 		# Go to bottom of list
 		G)
-			scroll="$list_total"
-			clear
-			print_dir
+			scroll="$((list_total-1))"
+			draw_dir
 			status_line
 			;;
 		# Show hidden files
@@ -364,7 +376,7 @@ keys() {
 			shopt_flags=(u s)
 			[[ $hidden == 0 ]] && hidden=1 || hidden=0
 			shopt -"${shopt_flags[$hidden]}" dotglob
-			scroll=1
+			scroll=0
 			redraw
 			;;
 		?)
@@ -381,7 +393,7 @@ keys() {
 main() {
 	mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/sf"
 	hidden=0
-	scroll=1
+	scroll=0
 	setup_terminal
 	redraw
 	while :; do
