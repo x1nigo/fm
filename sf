@@ -86,7 +86,7 @@ print_dir() {
 			format='\e[3m'
 		fi
 
-		if [[ ${marked_files[@]} =~ ${list[$1]} ]]; then
+		if [[ ${marked_files[$1]} == "${list[$1]}" ]]; then
 			format='\e[1;31m'
 			suffix=*
 		fi
@@ -292,13 +292,13 @@ EOF
 }
 
 keys() {
-# 	[[ $1 == $'\e' ]] && {
-# 		read -srn 2 key
-# 		special=${1}${key}
-# 	}
-	case $1 in
+	escape_char=$(printf "\u1b")
+	if [[ $input == $escape_char ]]; then
+		read -srn 2 input
+	fi
+	case $input in
 		# Go down
-		j|$'\e[B')
+		j|'[B')
 			if [[ "$scroll" -lt "$((list_total-1))" ]]; then
 				((scroll++))
 				printf '\e[%sH' "$scroll"
@@ -309,7 +309,7 @@ keys() {
 			fi
 			;;
 		# Go up
-		k|$'\e[A')
+		k|'[A')
 			if [[ "$scroll" -gt 0 ]]; then
 				((scroll--))
 				printf '\e[%sH' "$((scroll+2))"
@@ -325,8 +325,8 @@ keys() {
 			;;
 		# Action
 		l|\
-		$'\e[C'|\
-		$'\e[OC'|\
+		'[C'|\
+		'[OC'|\
 		'')
 			avoid && action
 			setup_terminal
@@ -334,8 +334,8 @@ keys() {
 			;;
 		# Go to previous directory
 		h|\
-		$'\e[D'|\
-		$'\e[OD')
+		'[D'|\
+		'[OD')
 			cd ../ && scroll=0
 			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
 			redraw
@@ -437,7 +437,7 @@ main() {
 	setup_terminal
 	redraw
 	while :; do
-		read -srn 1 && keys "$REPLY"
+		read -srn 1 input && keys
 	done
 }
 
