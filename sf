@@ -23,11 +23,13 @@ reset_terminal()  {
 
 # Prints the current directory
 status_line() {
+	local marked_info="-- [${#marked_files[@]}] selected --"
 	# Print at the bottom of the terminal
-	printf "\e[%sH\e[m(%d/%d) %s\033[K\e[m" \
+	printf "\e[%sH\e[m(%d/%d) %s %s\033[K\e[m" \
 		"$((LINES-1))" \
 		"$((scroll+1))" \
 		"$list_total"\
+		"${marked_files[*]:+${marked_info}}" \
 		"$PWD"
 	# Set the window name
 	printf '\e]2;sf %s\e'\\ "$PWD"
@@ -223,10 +225,10 @@ move() {
 
 # Mark files for further action
 mark_file() {
-	if [[ ${marked_files[@]} =~ ${list[scroll]} ]]; then
-		marked_files=("${marked_files[@]/${list[scroll]}}")
+	if [[ ${marked_files[$1]} == ${list[$1]} ]]; then
+		unset 'marked_files[$1]'
 	else
-		marked_files+=("${list[scroll]}")
+		marked_files[$1]="${list[$1]}"
 	fi
 }
 
@@ -236,10 +238,11 @@ bulk_rename() {
 
 	[[ -z ${marked_files[@]} ]] && return
 
-	for ((i=0;i<${#marked_files[@]};i++)) {
-		echo "${marked_files[$i]}" >> "$tmpfile_old"
-		echo "${marked_files[$i]}" >> "$tmpfile_new"
-	}
+	for item in "${marked_files[@]}"; do
+		echo "$item" >> "$tmpfile_old"
+		echo "$item" >> "$tmpfile_new"
+	done
+
 	# Use your favorite text editor
 	$EDITOR "$tmpfile_new"
 
@@ -345,7 +348,7 @@ keys() {
 			;;
 		# Mark file(s) - spacebar
 		' ')
-			mark_file
+			avoid && mark_file "$scroll"
 			setup_terminal
 			draw_dir
 			status_line
