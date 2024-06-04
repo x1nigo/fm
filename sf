@@ -87,13 +87,13 @@ print_dir() {
 		fi
 
 		if [[ ${marked_files[$1]} == "${list[$1]}" ]]; then
-			format='\e[1;31m'
-			suffix=*
+			format+='\e[31m'
+			suffix+=*
 		fi
 
 		# Use '\033[K' if you want to extend it to the end of the line
 		if [[ $1 == $scroll ]]; then
-			format+='\e[1;30;41m'
+			format+='\e[30;41m'
 		fi
 
 		# Print the formatted line
@@ -271,7 +271,7 @@ q		quit
 l		interact
 h		go to previous directory
 ~		go to home directory
-space	mark a file
+x		mark a file
 D		delete
 N		new file
 M		new directory
@@ -346,8 +346,8 @@ keys() {
 			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
 			redraw
 			;;
-		# Mark file(s) - spacebar
-		' ')
+		# Mark file(s)
+		x)
 			avoid && mark_file "$scroll"
 			setup_terminal
 			draw_dir
