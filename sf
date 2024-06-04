@@ -112,7 +112,7 @@ draw_dir() {
 
 action() {
 	[[ -d "${list[scroll]}" ]] && { cd "${list[scroll]}" && scroll=0 ; } &&
-		printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d || \
+		{ printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d && redraw; } || \
 		case "$(file --mime-type -b "${list[scroll]}")" in
 			audio/*|video/*)
 				mpv "${list[scroll]}" ||
@@ -131,6 +131,9 @@ action() {
 					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
 		esac
+		setup_terminal
+		draw_dir
+		status_line
 }
 
 # Don't make an action if directory is empty
@@ -331,8 +334,6 @@ keys() {
 		'[OC'|\
 		'')
 			avoid && action
-			setup_terminal
-			redraw
 			;;
 		# Go to previous directory
 		h|\
