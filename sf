@@ -25,7 +25,7 @@ reset_terminal()  {
 status_line() {
 	local marked_info="-- [${#marked_files[@]}] selected --"
 	# Print at the bottom of the terminal
-	printf "\e[%sH\e[m(%d/%d) %s %s\033[K\e[m" \
+	printf "\e[%sH\e[m(%d/%d) \e[33m%s\e[m %s\e[K\e[m" \
 		"$((LINES-1))" \
 		"$((scroll+1))" \
 		"$list_total"\
@@ -112,7 +112,7 @@ draw_dir() {
 
 action() {
 	[[ -d "${list[scroll]}" ]] && { cd "${list[scroll]}" && scroll=0 ; } &&
-		{ printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d && redraw; } || \
+		{ printf "%s" "$PWD" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d ; redraw && return; } || \
 		case "$(file --mime-type -b "${list[scroll]}")" in
 			audio/*|video/*)
 				mpv "${list[scroll]}" ||
@@ -160,7 +160,7 @@ delete() {
 rename() {
 	cmd_line "\"${list[scroll]}\" Rename: "
 	read ans
-	[[ -z "$ans" ]] && continue
+	[[ -z "$ans" ]] && return
 	mv "${list[scroll]}" "$ans"
 }
 
@@ -168,7 +168,7 @@ rename() {
 create_file() {
 	cmd_line "New file: "
 	read ans
-	[[ -z "$ans" ]] && continue
+	[[ -z "$ans" ]] && return
 	touch "$ans"
 }
 
@@ -176,7 +176,7 @@ create_file() {
 create_dir() {
 	cmd_line "New directory: "
 	read ans
-	[[ -z "$ans" ]] && continue
+	[[ -z "$ans" ]] && return
 	mkdir -p "$ans"
 }
 
@@ -185,7 +185,7 @@ copy() {
 	if [[ -x "$(command -v fzf)" ]]; then
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Copy to: ')"
-		[[ -z "$dest" ]] && continue
+		[[ -z "$dest" ]] && return
 
 		# Copy marked files
 		if [[ -z ${marked_files[@]} ]]; then
@@ -199,7 +199,7 @@ copy() {
 	else
 		cmd_line "Copy \"${list[scroll]}\" to: "
 		read ans
-		[[ -z "$ans" ]] && continue
+		[[ -z "$ans" ]] && return
 		cp -vr "${list[scroll]}" "$ans"
 	fi
 }
@@ -209,7 +209,7 @@ move() {
 	if [[ -x "$(command -v fzf)" ]]; then
 		reset_terminal
 		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Move to: ')"
-		[[ -z "$dest" ]] && continue
+		[[ -z "$dest" ]] && return
 
 		# Move marked files
 		if [[ -z ${marked_files[@]} ]]; then
@@ -223,7 +223,7 @@ move() {
 	else
 		cmd_line "Move \"${list[scroll]}\" to: "
 		read ans
-		[[ -z "$ans" ]] && continue
+		[[ -z "$ans" ]] && return
 		mv "${list[scroll]}" "$ans"
 	fi
 }
@@ -247,12 +247,10 @@ bulk_rename() {
 		echo "$item" >> "$tmpfile_old"
 		echo "$item" >> "$tmpfile_new"
 	done
-
-	# Use your favorite text editor
 	$EDITOR "$tmpfile_new"
 
 	[[ "$(wc -l < "$tmpfile_old")" -eq "$(wc -l < "$tmpfile_new")" ]] ||
-		{ rm -rf "$tmpfile_old" "$tmpfile_new"; continue; }
+		{ rm -rf "$tmpfile_old" "$tmpfile_new"; return; }
 
 	paste "$tmpfile_old" "$tmpfile_new" | while IFS="$(printf '\t')" read -r src dst
     do
@@ -352,7 +350,7 @@ keys() {
 		# Mark file(s)
 		x)
 			avoid && mark_file "$scroll"
-			setup_terminal
+			clear
 			draw_dir
 			status_line
 			;;
