@@ -79,18 +79,20 @@ print_dir() {
 		# If the dir item doesn't exist, end here.
 		if [[ ${list[0]} == "*" ]]; then
 			return
+		# Directories
 		elif [[ -d ${list[$1]} ]]; then
 			format='\e[1m'
 			suffix=/
+		# Executable files
 		elif [[ -x ${list[$1]} ]]; then
 			format='\e[3m\e[1m'
 		fi
-
+		# Marked files
 		if [[ ${marked_files[$1]} == "${list[$1]}" ]]; then
 			format+='\e[33m'
 			suffix+=*
 		fi
-
+		# User's focus
 		# Use '\033[K' if you want to extend it to the end of the line
 		if [[ $1 == $scroll ]]; then
 			format+='\e[30;41m'
