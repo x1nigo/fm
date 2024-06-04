@@ -83,7 +83,7 @@ print_dir() {
 			format='\e[1m'
 			suffix=/
 		elif [[ -x ${list[$1]} ]]; then
-			format='\e[3m'
+			format='\e[3m\e[1m'
 		fi
 
 		if [[ ${marked_files[$1]} == "${list[$1]}" ]]; then
