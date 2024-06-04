@@ -87,7 +87,7 @@ print_dir() {
 		fi
 
 		if [[ ${marked_files[$1]} == "${list[$1]}" ]]; then
-			format+='\e[31m'
+			format+='\e[33m'
 			suffix+=*
 		fi
 
