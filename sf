@@ -23,13 +23,13 @@ reset_terminal()  {
 
 # Prints the current directory
 status_line() {
-	local marked_info="-- [${#marked_files[@]}] selected --"
+	local tagged_info="-- [${#tagged_files[@]}] tagged --"
 	# Print at the bottom of the terminal
 	printf "\e[%sH\e[m(%d/%d) \e[33m%s\e[m %s\e[K\e[m" \
 		"$((LINES-1))" \
 		"$((scroll+1))" \
 		"$list_total"\
-		"${marked_files[*]:+${marked_info}}" \
+		"${tagged_files[*]:+${tagged_info}}" \
 		"$PWD"
 	# Set the window name
 	printf '\e]2;sf %s\e'\\ "$PWD"
@@ -87,8 +87,8 @@ print_dir() {
 		elif [[ -x ${list[$1]} ]]; then
 			format='\e[3m\e[1m'
 		fi
-		# Marked files
-		if [[ ${marked_files[$1]} == "${list[$1]}" ]]; then
+		# Tagged files
+		if [[ ${tagged_files[$1]} == "${list[$1]}" ]]; then
 			format+='\e[33m'
 			suffix+=*
 		fi
@@ -146,13 +146,13 @@ delete() {
 	[[ "$ans" != "y" ]] && return
 
 	# Delete marked files
-	if [[ -z ${marked_files[@]} ]]; then
+	if [[ -z ${tagged_files[@]} ]]; then
 		rm -rf "${list[scroll]}"
 	else
-		for i in "${marked_files[@]}"; do
+		for i in "${tagged_files[@]}"; do
 			rm -rf "$i"
 		done
-		marked_files=()
+		tagged_files=()
 	fi
 }
 
@@ -188,13 +188,13 @@ copy() {
 		[[ -z "$dest" ]] && return
 
 		# Copy marked files
-		if [[ -z ${marked_files[@]} ]]; then
+		if [[ -z ${tagged_files[@]} ]]; then
 			cp -r "${list[scroll]}" "$dest"
 		else
-			for i in "${marked_files[@]}"; do
+			for i in "${tagged_files[@]}"; do
 				cp -r "$i" "$dest"
 			done
-			marked_files=()
+			tagged_files=()
 		fi
 	else
 		cmd_line "Copy \"${list[scroll]}\" to: "
@@ -212,13 +212,13 @@ move() {
 		[[ -z "$dest" ]] && return
 
 		# Move marked files
-		if [[ -z ${marked_files[@]} ]]; then
+		if [[ -z ${tagged_files[@]} ]]; then
 			mv "${list[scroll]}" "$dest"
 		else
-			for i in "${marked_files[@]}"; do
+			for i in "${tagged_files[@]}"; do
 				mv "$i" "$dest"
 			done
-			marked_files=()
+			tagged_files=()
 		fi
 	else
 		cmd_line "Move \"${list[scroll]}\" to: "
@@ -228,12 +228,12 @@ move() {
 	fi
 }
 
-# Mark files for further action
-mark_file() {
-	if [[ ${marked_files[$1]} == ${list[$1]} ]]; then
-		unset 'marked_files[$1]'
+# Tag files for further action
+tag_file() {
+	if [[ ${tagged_files[$1]} == ${list[$1]} ]]; then
+		unset 'tagged_files[$1]'
 	else
-		marked_files[$1]="${list[$1]}"
+		tagged_files[$1]="${list[$1]}"
 	fi
 }
 
@@ -241,9 +241,9 @@ bulk_rename() {
 	tmpfile_old="$(mktemp)"
 	tmpfile_new="$(mktemp)"
 
-	[[ -z ${marked_files[@]} ]] && return
+	[[ -z ${tagged_files[@]} ]] && return
 
-	for item in "${marked_files[@]}"; do
+	for item in "${tagged_files[@]}"; do
 		echo "$item" >> "$tmpfile_old"
 		echo "$item" >> "$tmpfile_new"
 	done
@@ -259,7 +259,7 @@ bulk_rename() {
 
 	# Remove the temporary files
 	rm -f "$tmpfile_old" "$tmpfile_new"
-	marked_files=()
+	tagged_files=()
 }
 
 keybinds() {
@@ -347,9 +347,9 @@ keys() {
 			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
 			redraw
 			;;
-		# Mark file(s)
-		x)
-			avoid && mark_file "$scroll"
+		# Tag file(s)
+		t)
+			avoid && tag_file "$scroll"
 			clear
 			draw_dir
 			status_line
