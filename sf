@@ -25,7 +25,7 @@ reset_terminal()  {
 status_line() {
 	local tagged_info="-- [${#tagged_files[@]}] tagged --"
 	# Print at the bottom of the terminal
-	printf "\e[%sH\e[1m(%d/%d) \e[33m%s\e[m \e[1m%s\e[K\e[m" \
+	printf "\e[%sH\e[1m%d/%d %s %s\e[K\e[m" \
 		"$((LINES-1))" \
 		"$((scroll+1))" \
 		"$list_total"\
@@ -89,7 +89,7 @@ print_dir() {
 		fi
 		# Tagged files
 		if [[ ${tagged_files[$1]} == "${list[$1]}" ]]; then
-			format+='\e[33m'
+			format+='\e[31m'
 			suffix+=*
 		fi
 		# User's focus
