@@ -184,7 +184,8 @@ create_dir() {
 copy() {
 	if [[ -x "$(command -v fzf)" ]]; then
 		reset_terminal
-		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Copy to: ')"
+		dest="$(find $HOME -type d | sed "s|$HOME|~|" | fzf --height=20% --no-separator --reverse --prompt='Copy to: ')"
+		dest="$(echo "$dest" | sed "s|~|$HOME|")"
 		[[ -z "$dest" ]] && return
 
 		# Copy marked files
@@ -208,7 +209,8 @@ copy() {
 move() {
 	if [[ -x "$(command -v fzf)" ]]; then
 		reset_terminal
-		dest="$(find $HOME -type d | fzf --height=20% --layout=reverse --prompt='Move to: ')"
+		dest="$(find $HOME -type d | sed "s|$HOME|~|" | fzf --height=20% --no-separator --reverse --prompt='Move to: ')"
+		dest="$(echo "$dest" | sed "s|~|$HOME|")"
 		[[ -z "$dest" ]] && return
 
 		# Move marked files
