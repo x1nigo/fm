@@ -1,4 +1,4 @@
-# fm (*File Manager*)
+# fm (*File Manager*)[^1]
 
 A terminal file-manager written in `bash`. This is still a work in progress. As such it still lacks more features, but it works.
 
@@ -16,4 +16,4 @@ A terminal file-manager written in `bash`. This is still a work in progress. As 
 3. Make the file: `make install`.[^2]
 
 [^1]: Inspired by [fff](https://github.com/dylanaraps/fff). I've always wanted to write my own terminal file-manager using shell scripting syntax.
-[^2]: You may need to use root permission to `make install` it just in case.
+[^2]: You may need root permissions for this.
