@@ -127,6 +127,7 @@ action() {
 					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
 			*)
+				[[ "$EDITOR" == "le" ]] && reset_terminal
 				$EDITOR "${list[scroll]}" ||
 					xdg-open "${list[scroll]}" >/dev/null 2>&1
 				;;
