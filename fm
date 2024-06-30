@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# sf - a terminal file-manager
+# fm - a terminal file-manager written in bash.
 # Created by Chris Iñigo <https://github.com/x1nigo/sf>
 
 # Setup the terminal
