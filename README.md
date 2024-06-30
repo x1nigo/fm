@@ -1,4 +1,4 @@
-# sf
+# fm (*File Manager*)
 
 A terminal file-manager written in `bash`. This is still a work in progress. As such it still lacks more features, but it works.
 
@@ -11,14 +11,9 @@ A terminal file-manager written in `bash`. This is still a work in progress. As 
 
 ## How to install
 
-```
-git clone https://github.com/x1nigo/sf.git
-cd sf
-make install
-```
+1. Clone the repository: `git clone https://github.com/x1nigo/fm.git`.
+2. Enter the new directory: `cd fm`.
+3. Make the file: `make install`.[^2]
 
-You may need to use root permission to `make install` it just in case.
-
-## Notes
-
-Inspired by [fff](https://github.com/dylanaraps/fff). I've always wanted to write my own terminal file-manager using shell scripting syntax.
+[^1]: Inspired by [fff](https://github.com/dylanaraps/fff). I've always wanted to write my own terminal file-manager using shell scripting syntax.
+[^2]: You may need to use root permission to `make install` it just in case.
