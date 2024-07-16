@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# sf - a terminal file-manager
+# fm - a simple terminal file-manager written in bash
 # Created by Chris Iñigo <https://github.com/x1nigo/sf>
 
 # Setup the terminal
@@ -32,7 +32,7 @@ status_line() {
 		"${tagged_files[*]:+${tagged_info}}" \
 		"$PWD"
 	# Set the window name
-	printf '\e]2;fm %s\e'\\ "$PWD"
+	printf '\e]2;file-manager -> %s\e'\\ "$PWD"
 }
 
 cmd_line() {
@@ -440,9 +440,9 @@ main() {
 	scroll=0
 	setup_terminal
 	redraw
-	while :; do
+	for ((;;)); {
 		read -srn 1 input && keys
-	done
+	}
 }
 
 main
