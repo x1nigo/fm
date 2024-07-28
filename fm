@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # fm - a simple terminal file-manager written in bash
-# Created by Chris Iñigo <https://github.com/x1nigo/sf>
+# Created by Chris Iñigo <https://github.com/x1nigo/fm>
 
 # Setup the terminal
 setup_terminal() {
