@@ -112,7 +112,7 @@ draw_dir() {
 
 action() {
 	[[ -d "${list[scroll]}" ]] && { cd "${list[scroll]}" && scroll=0 ; } &&
-		{ printf "%s" "$PWD" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d ; redraw && return; } || \
+		{ printf "%s" "$PWD" > ${XDG_CACHE_HOME:-$HOME/.cache}/fm/.fm_d ; redraw && return; } || \
 		case "$(file --mime-type -b "${list[scroll]}")" in
 			audio/*|video/*)
 				mpv "${list[scroll]}" ||
@@ -341,13 +341,13 @@ keys() {
 		'[D'|\
 		'[OD')
 			cd ../ && scroll=0
-			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
+			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/fm/.fm_d
 			redraw
 			;;
 		# Go to home directory
 		'~')
 			cd && scroll=0
-			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/sf/.sf_d
+			printf "%s" "$(readlink -f "$PWD")" > ${XDG_CACHE_HOME:-$HOME/.cache}/fm/.fm_d
 			redraw
 			;;
 		# Tag file(s)
@@ -435,7 +435,7 @@ keys() {
 
 # The main function that runs every time
 main() {
-	mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/sf"
+	mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/fm"
 	hidden=0
 	scroll=0
 	setup_terminal
